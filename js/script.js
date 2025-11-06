@@ -51,11 +51,47 @@ function Yes() {
 
 function Completed() {
     EnormNoBullshit.classList.remove('hidden');
-    EnormNoBullshit.play();
-    EnormNoBullshit.addEventListener("ended", function () {
-        EnormNoBullshit.remove();
-        console.log("Video removed after playing.");
-    })
+
+    const requestFs = (el) => {
+        if (el.requestFullscreen) return el.requestFullscreen();
+        if (el.webkitRequestFullscreen) return el.webkitRequestFullscreen();
+        if (el.msRequestFullscreen) return el.msRequestFullscreen();
+        return Promise.resolve();
+    };
+
+    const exitFs = () => {
+        if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
+            if (document.exitFullscreen) return document.exitFullscreen();
+            if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+            if (document.msExitFullscreen) return document.msExitFullscreen();
+        }
+        return Promise.resolve();
+    };
+
+    const cleanup = () => {
+        EnormNoBullshit.pause();
+        exitFs().finally(() => {
+            EnormNoBullshit.removeEventListener("ended", handleEnded);
+            EnormNoBullshit.removeEventListener("click", handleClickToClose);
+            document.removeEventListener("keydown", handleEscToClose);
+            EnormNoBullshit.remove();
+            console.log("Video removed after playing.");
+        });
+    };
+
+    const handleEnded = () => cleanup();
+    const handleClickToClose = () => cleanup();
+    const handleEscToClose = (e) => {
+        if (e.key === "Escape") cleanup();
+    };
+
+    EnormNoBullshit.addEventListener("ended", handleEnded);
+    EnormNoBullshit.addEventListener("click", handleClickToClose);
+    document.addEventListener("keydown", handleEscToClose, { once: true });
+
+    requestFs(EnormNoBullshit).finally(() => {
+        EnormNoBullshit.play();
+    });
 };
 
 document.getElementById("EnergyCanCreative").addEventListener("click", function () {
